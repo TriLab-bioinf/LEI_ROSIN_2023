@@ -1,4 +1,4 @@
-**Generation of annotation gff file for new *P. interpunctella* assembly**
+### **Generation of annotation gff file for new *P. interpunctella* assembly**
 
 Annotation source: <http://gigadb.org/dataset/view/id/102231/File_sort/type_id>
 
@@ -69,4 +69,26 @@ The sorted gff file was afterwards processed to eliminate redundant isoforms tha
 cat sorted_NEW.gff| ./remove_redundant_transcripts.pl > mRNA_NEW.NR.ids
 
 egrep -wf mRNA_NEW.NR.ids sorted_NEW.gff > sorted_NEW.NR.gff
+```
+### **Identification of syntenic blocks between new *P. interpunctella* (GCF_027563975.1) and *Bombyx mori* (GCF_014905235.1) assemblies** 
+
+*P. interpunctella* and *Bombyx mori* assemblies were aligned in protein space with the mummer tool promer and the resulting delta file was formatted as a hit coordinate file.  
+```
+promer -p Pinter_vs_Bmori_promer GCF_014905235.1_Bmori_2016v1.0_genomic.fna GCF_027563975.1_ilPloInte3.1_genomic.fna
+
+show-coords -clrT Pinter_vs_Bmori_promer.delta > Pinter_vs_Bmori_promer.coords
+```
+
+Next, the Pinter_vs_Bmori_promer.coords file was parsed as a matchList file, that can be used as input for the tool DAGchainer (https://github.com/kullrich/dagchainer).   
+
+```
+cat Pinter_vs_Bmori_promer.NO_HEADER.coords | \
+     perl -lane '$gene_1="$F[15]_$F[0]_$F[1]"; $gene_2="$F[16]_$F[2]_$F[3]" ;($int,undef)=split(/\./,$F[6]);print "$F[15]\t$gene_1\t$F[0]\t$F[1]\t$F[16]\t$gene_2\t$F[2]\t$F[3]\t1e-$int\t$F[7]"' > Pinter_vs_Bmori_promer.matchList
+```
+
+File Pinter_vs_Bmori_promer.matchList was then processed with the DAGchainer sofwtare to identify syntenic blocks between the two genomes
+```
+./accessory_scripts/filter_repetitive_matches.pl 5 < Pinter_vs_Bmori_promer.matchList > Pinter_vs_Bmori_promer.matchList.filtered
+
+run_DAG_chainer.pl -i Pinter_vs_Bmori_promer.matchList.filtered -D 50000 -A 6 > Pinter_vs_Bmori_promer.matchList.filtered.synteny
 ```
